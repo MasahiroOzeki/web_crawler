@@ -514,9 +514,8 @@ class PdoDataBaseMng extends DataBase{
 					}
 					
 					for($iCnt=0;$iCnt<count($aBindParams);$iCnt++){
-						foreach($aBindParams[$iCnt] as $sKey => $sValue){
-							${$sKey} = $sValue;
-						}
+						// 
+						extract($aBindParams[$iCnt]);
 						
 						// 実行
 						$rtn = $oStmt->execute();
@@ -658,6 +657,25 @@ class PdoDataBaseMng extends DataBase{
 			$rtn = $this->executeSql($sSql);
 		}
 		
+		
+		return $rtn;
+	}
+	
+	public function lastInsertId(){
+		$rtn = TRUE;
+		
+		$oDb = $this->_Con;
+		
+		try {
+			$rtn = $oDb->lastInsertId();
+
+		} catch (PDOException $e){
+			// エラー情報取得
+			$rtn = FALSE;
+			$this->_Error[0] = $e->getCode();
+			$this->_Error[1] = $e->getCode();
+			$this->_Error[2] = $e->getMessage();
+		}
 		
 		return $rtn;
 	}

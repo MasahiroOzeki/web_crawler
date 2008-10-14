@@ -1,51 +1,49 @@
 <?php
 
+// Include
 require_once '../apps/conf_ini.php';
+require_once 'apps/class/Process/CollectUrl/CollectUrlDao_cls.php';
 
-/**
- * Web 取得
- */
-
-$oPDO = new PdoDataBaseMng($sDBName);
-$oPDO->connectDataBase();
-var_dump($oPDO->getError());
-
+// 初期化
+$oDb = new CollectUrlDao($oDbConnMng);
 $oParser = new HtmlParse();
 
+//
 for($iHierarchy=0;$iHierarchy<3;$iHierarchy++){
 	echo "Hierarchy:".$iHierarchy."\n";
 	
-	$oPDO->executeSelect('select * from t_url where hierarchy = '.$iHierarchy);
-	$aUrlHeader = $oPDO->fetchAll();
+	// i階層のURLを取得する
+	$aUrlHeader = $oDb->getUrlByHierarchy($iHierarchy);
 	
 	for($iCnt=0;$iCnt<count($aUrlHeader);$iCnt++){
 		// アクセスする URL を指定
 		echo $aUrlHeader[$iCnt]['url']."\n";
+		
+		// HTMLデータ取得
 		$sHtml = getHtmlData($aUrlHeader[$iCnt]['url']);
 		if(!$sHtml) continue;
 		
-		//UTF-8にエンコード
+		// UTF-8にエンコード
 		$enc = mb_detect_encoding($sHtml);
 		$sHtml = mb_convert_encoding($sHtml,"UTF-8",$enc);
 		
-		//解析 
-		$rtn = $oParser->execHtmlParse($sHtml);
-
+		// 解析 
+		$oParser->execHtmlParse($sHtml);
+		$rtn = $oParser->getResult();
+		
 		if($rtn !== false){
 			list($aSubject,$aUrl) = $rtn;
-			$sSql =" INSERT INTO t_url(url, title, hierarchy,p_id) VALUES (:url, :title, :hierarchy,:p_id)";
-			foreach($aUrl as $iUrlNo => $sUrl){
-				$aParam = array();
-				$aParam['url'] = $sUrl;
-				$aParam['hierarchy'] = $iHierarchy+1;
-				$aParam['title'] = $aSubject[$iUrlNo];
-				$aParam['p_id'] = $aUrlHeader[$iCnt]['id'];
 
-				$rtn=$oPDO->executeInsert($sSql,array($aParam),2);
+			foreach($aUrl as $iUrlNo => $sUrl){
+				// URL存在チェック
+				$id = $oDb->checkUrlExist($sUrl);
+				if($id !== FALSE){
+					// URLセット
+					$id = $oDb->setUrl($sUrl);
+				}				
 				
-				if(!$rtn){
-					var_dump($oPDO->getError());
-				}
+				// 階層情報セット
+				$oDb->setHierarchy($id,$aUrlHeader[$iCnt]['id'],$iHierarchy+1,$aSubject[$iUrlNo]);
 			}
 		}
 	}

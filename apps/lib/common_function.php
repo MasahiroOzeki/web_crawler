@@ -31,9 +31,17 @@ class HtmlParse {
 	var $_handle = null;
 	var $_parser = null;
 		
-	function HtmlParse(){
+	function HtmlParse($iMode=1){
 		// Instantiate the handler
-		$this->_handler= new SimpleUrlHandler();
+		
+		// URL取得
+		if($iMode == 1){
+			$this->_handler= new UrlGetHandler();
+		// タグ除去
+		} elseif($iMode == 2){
+			$this->_handler= new SimpleUrlHandler();
+		}
+
 		
 		//XML_HTMLSaxをインクルード
 		$this->_parser =& new XML_HTMLSax();
@@ -54,11 +62,19 @@ class HtmlParse {
 		
 		//パースする
 		$this->_parser->parse($sHtml);
-		
-		if(count($this->_handler->getUrl()) != 0){
-			return array($this->_handler->getSubeject(),$this->_handler->getUrl(),$this->_handler->getBodyData());
-		} else {
-			return false;
+	}
+	
+	function getResult(){
+		// URL取得
+		if($iMode == 1){
+			if(count($this->_handler->getUrl()) != 0){
+				return array($this->_handler->getSubeject(),$this->_handler->getUrl(),$this->_handler->getBodyData());
+			} else {
+				return false;
+			}
+		// タグ除去
+		} elseif($iMode == 2){
+			$this->_handler= new SimpleUrlHandler();
 		}
 	}
 }

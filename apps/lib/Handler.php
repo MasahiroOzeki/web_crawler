@@ -24,29 +24,79 @@ class MyHandler {
     }
 }
 
-class SimpleUrlHandler extends MyHandler{
-	var $_change_line_tag = array('div','li','p','blockquote','lh');
+class UrlGetHandler extends MyHandler{
 	var $_active_tag = array();
 	var $_current_tag = array();
-	var $_body_flag = false;
 
 	var $_url = array();
 	var $_url_subeject = array();
+
 	
-	var $_body_data = array();
-	
-    function SimpleUrlHandler(){ 	
+    function UrlGetHandler(){ 	
     }
     
     function getUrl(){
     	return $this->_url;
     }
+    
     function getSubeject(){
     	return $this->_url_subeject;
     }
+
+    function clearDataFiled(){
+		$this->_active_tag = array();
+		$this->_current_tag = '';
+	
+		$this->_url = array();
+		$this->_url_subeject = array();
+    }
+    
+    function openHandler(& $parser,$name,$attrs) {
+    	// 現在のアクティブなタグ種別を取得
+    	array_push($this->_active_tag,$name);
+      	    	
+        if($name == 'a'){
+    		$this->_url[] = $attrs['href'];
+    	} elseif($name == 'img' && $this->_current_tag == 'a' ){
+    		$this->_url_subeject[] = $attrs['alt'];   		
+    	} 
+    	    	
+    	$this->_current_tag = $name;
+    }
+    
+    function closeHandler(& $parser,$name) {
+    	array_pop($this->_active_tag);
+    	$this->_current_tag = '';
+    }
+    
+    function dataHandler(&$parser,$data) {
+        if($this->_current_tag == 'a'){    	
+        	$this->_url_subeject[] = $data;
+    	} 
+   	}
+	
+    function escapeHandler(& $parser,$data) {}
+    
+    function piHandler(& $parser,$target,$data) {}
+    
+    function jaspHandler(& $parser,$data) {}
+}
+
+class RemovedTagHandler extends MyHandler{
+	var $_active_tag = array();
+	var $_current_tag = array();
+
+	var $_change_line_tag = array('div','li','p','blockquote','lh');
+	var $_body_flag = false;
+	var $_body_data = array();
+	
+    function RemovedTagHandler(){ 	
+    }
+    
     function getBodyData(){
     	return $this->_body_data;
     }
+    
     function clearDataFiled(){
 		$this->_active_tag = array();
 		$this->_current_tag = array();
