@@ -1,4 +1,6 @@
 <?php
+require_once('XML_HTMLSax.php');
+require_once('class/util/Handler.php');
 
 /**
  * Web 取得

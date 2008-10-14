@@ -5,14 +5,11 @@ define("COMMON_DOCUMENT_ROOT","C:/Documents and Settings/ozekim/workspace/web_cr
 // Includeパス
 ini_set('include_path',ini_get('include_path').PATH_SEPARATOR.COMMON_DOCUMENT_ROOT);
 ini_set('include_path',ini_get('include_path').PATH_SEPARATOR.COMMON_DOCUMENT_ROOT.'apps/');
-ini_set('include_path',ini_get('include_path').PATH_SEPARATOR.COMMON_DOCUMENT_ROOT.'apps/lib/');
 ini_set('include_path',ini_get('include_path').PATH_SEPARATOR.COMMON_DOCUMENT_ROOT.'apps/lib/PEAR/');
 
 // インクルード
-require_once('XML_HTMLSax.php');
-require_once('Handler.php');
-//require_once('class/DB/DBConnMng_cls.php');
-require_once('common_function.php');
+require_once('class/util/common_function.php');
+require_once('class/DB/DBConnMng_cls.php');
 
 // 実行設定
 set_time_limit(6000);
