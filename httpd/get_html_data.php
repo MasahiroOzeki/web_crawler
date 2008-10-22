@@ -10,13 +10,17 @@ $oDb = new CollectHtmlDao($oDbConnMng);
 $aUrlHeader = $oDb->getUrl();
 while($aUrlHeader && count($aUrlHeader) != 0){
 	$aHtml = array();
-	$aUrlId = array();
+	$aOkUrlId = array();
+	$aErrUrlId = array();
 	for($iCnt=0;$iCnt<count($aUrlHeader);$iCnt++){
 		// アクセスする URL を指定
 		echo $aUrlHeader[$iCnt]['url']."\n";
 		
 		$sHtml = getHtmlData($aUrlHeader[$iCnt]['url']);
-		if(!$sHtml) continue;
+		if(!$sHtml) {
+			$aErrUrlId[] = $aUrlHeader[$iCnt]['url_id'];
+			continue;
+		}
 		
 		// UTF-8にエンコード
 		$enc = mb_detect_encoding($sHtml);
@@ -25,11 +29,12 @@ while($aUrlHeader && count($aUrlHeader) != 0){
 		// 
 		$aHtml[] = array('url_id'=>$aUrlHeader[$iCnt]['url_id'],
 							'html'=>$sHtml);
-		$aUrlId[] = $aUrlHeader[$iCnt]['url_id'];
+		$aOkUrlId[] = $aUrlHeader[$iCnt]['url_id'];
 		
 	}
 	
 	$oDb->setHtml($aHtml);
-	$oDb->updateUrlStatus($aUrlId);
+	$oDb->updateUrlStatus($aOkUrlId,URL_STATUS_END);
+	if(count($aErrUrlId) != 0) $oDb->updateUrlStatus($aErrUrlId,URL_STATUS_FAILED);
 }
 ?>

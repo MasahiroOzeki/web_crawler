@@ -23,9 +23,17 @@ $aDBInfo[1]['DB_HOST'] = 'localhost';
 $aDBInfo[1]['DB_PORT'] = 5432;
 $aDBInfo[1]['DB_KIND'] = 'postgres';
 
+// 定義
+// 使用DB定義
 define("URL_DB",1);
 define("HTML_DATA_DB",1);
 
-//
+// URLステータス
+define("URL_STATUS_WAIT"   ,0);
+define("URL_STATUS_NOW"    ,1);
+define("URL_STATUS_END"    ,2);
+define("URL_STATUS_FAILED" ,3);
+
+// 共通オブジェクト
 $oDbConnMng = new DBConnMng($aDBInfo);
 ?>

@@ -3,8 +3,13 @@ require_once('class/DB/DBConnMng_cls.php');
 
 class BaseDao {
 	var $_oConnMng = null;
+	var $_oLog = null;
 	var $_iDb = 0;
+	
 	function BaseDao($oConnMng){
+		//
+		$this->_oLog = new LogMassage();
+		
 		$this->_oConnMng = $oConnMng;
 	}
 	
@@ -16,5 +21,6 @@ class BaseDao {
 		if(is_null($iNo)) $iNo = $this->_iDb;
 		return $this->_oConn = $oConnMng->getConn($iNo);
 	}
+	
 }
 ?>

@@ -14,7 +14,7 @@ class CollectHtmlDao extends BaseDao  {
 					 url_id
 					,url
 					from m_url
-					where status = 0
+					where status = ".URL_STATUS_WAIT."
 					offset 0 limit ".$iLimit;
 		
 		if($oConn->executeSelect($sSql) === FALSE){
@@ -22,7 +22,16 @@ class CollectHtmlDao extends BaseDao  {
 			$this->_oConnMng->execErrorOccurs();
 		}
 		
-		$aUrlHeader = $oConn->fetchAll();
+		// URLデータ取得
+		$aUrlHeader = arrary();
+		$aTargetId = arrary();
+		while (($rtn = $oConn->fetch()) !== FALSE){
+			$aUrlHeader[] = $rtn;
+			$aTargetId[] = $rtn['url_id'];
+		}
+		
+		// ステータス変更
+		$this->updateUrlStatus($aTargetId,URL_STATUS_NOW);
 		
 		return $aUrlHeader;
 	}
@@ -48,7 +57,7 @@ class CollectHtmlDao extends BaseDao  {
 	}
 	
 	// 
-	function updateUrlStatus($aUrlId,$iStatus=1){
+	function updateUrlStatus($aUrlId,$iStatus=URL_STATUS_END){
 		if(count($aUrlId) == 0) return FALSE;
 		
 		$oConn = $this->getConn(URL_DB);
