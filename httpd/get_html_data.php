@@ -1,15 +1,14 @@
 <?php
 
 require_once '../apps/conf_ini.php';
-require_once 'apps/class/Process/CollectUrl/CollectHtmlDao_cls.php';
+require_once 'apps/class/Process/CollectHtml/CollectHtmlDao_cls.php';
 
 // 初期化
 $oDb = new CollectHtmlDao($oDbConnMng);
 
-for($iHierarchy=0;$iHierarchy<3;$iHierarchy++){
-	// HTML取得先URLリスト取得
-	$aUrlHeader = $oDb->getUrl();
-	
+// HTML取得先URLリスト取得
+$aUrlHeader = $oDb->getUrl();
+while($aUrlHeader && count($aUrlHeader) != 0){
 	$aHtml = array();
 	$aUrlId = array();
 	for($iCnt=0;$iCnt<count($aUrlHeader);$iCnt++){
@@ -25,7 +24,7 @@ for($iHierarchy=0;$iHierarchy<3;$iHierarchy++){
 		
 		// 
 		$aHtml[] = array('url_id'=>$aUrlHeader[$iCnt]['url_id'],
-							'html',$sHtml);
+							'html'=>$sHtml);
 		$aUrlId[] = $aUrlHeader[$iCnt]['url_id'];
 		
 	}
@@ -33,5 +32,4 @@ for($iHierarchy=0;$iHierarchy<3;$iHierarchy++){
 	$oDb->setHtml($aHtml);
 	$oDb->updateUrlStatus($aUrlId);
 }
-
 ?>

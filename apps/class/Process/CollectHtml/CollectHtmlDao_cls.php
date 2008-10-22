@@ -1,16 +1,14 @@
 <?php
-class CollectHtmlDao {
-	var $_oConnMng = null;
-	var $_oConn = null;
+class CollectHtmlDao extends BaseDao  {
 	
 	function CollectHtmlDao($oConnMng){
-		$this->_oConnMng = $oConnMng;
-		$this->_oConn = $oConnMng->getConn(1);
+		parent::BaseDao($oConnMng);
+		$this->setDefaultDBNo(HTML_DATA_DB);
 	}
 	
 	// HTMLデータ取得前のURLリスト取得
-	function getUrl($iLimit=50){
-		$oConn = $this->_oConn;
+	function getUrl($iLimit=100){
+		$oConn = $this->getConn(URL_DB);
 		
 		$sSql ="select
 					 url_id
@@ -19,8 +17,12 @@ class CollectHtmlDao {
 					where status = 0
 					offset 0 limit ".$iLimit;
 		
-		$oDb->executeSelect($sSql);
-		$aUrlHeader = $oDb->fetchAll();
+		if($oConn->executeSelect($sSql) === FALSE){
+			// エラー処理
+			$this->_oConnMng->execErrorOccurs();
+		}
+		
+		$aUrlHeader = $oConn->fetchAll();
 		
 		return $aUrlHeader;
 	}
@@ -29,15 +31,15 @@ class CollectHtmlDao {
 	function setHtml($aHtml){
 		if(count($aHtml) == 0) return FALSE;
 		
-		$oConn = $this->_oConn;
+		$oConn = $this->getConn();
 		
 		$sSql ="INSERT
 					 INTO m_html_org(url_id
 						, html)
 					VALUES (:url_id
 						, :html)";
-		
-		if($oConn->executeInsert($sSql,$aHtml,2) !== FALSE){
+
+		if($oConn->executeInsert($sSql,$aHtml,2) === FALSE){
 			// エラー処理
 			$this->_oConnMng->execErrorOccurs();
 		}
@@ -49,14 +51,14 @@ class CollectHtmlDao {
 	function updateUrlStatus($aUrlId,$iStatus=1){
 		if(count($aUrlId) == 0) return FALSE;
 		
-		$oConn = $this->_oConn;		
+		$oConn = $this->getConn(URL_DB);
 		
 		$sSql ="UPDATE
 					 m_url
 					SET status = ".$iStatus."
 					WHERE url_id in(".implode(',',$aUrlId).")";
 	
-		if($oConn->executeUpdate($sSql) !== FALSE){
+		if($oConn->executeUpdate($sSql) === FALSE){
 			// エラー処理
 			$this->_oConnMng->execErrorOccurs();
 		}

@@ -668,7 +668,6 @@ class PdoDataBaseMng extends DataBase{
 		
 		try {
 			$rtn = $oDb->lastInsertId();
-
 		} catch (PDOException $e){
 			// エラー情報取得
 			$rtn = FALSE;

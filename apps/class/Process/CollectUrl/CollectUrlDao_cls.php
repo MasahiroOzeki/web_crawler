@@ -1,45 +1,46 @@
 <?php
 
-class CollectUrlDao {
-	var $_oConnMng = null;
-	var $_oConn = null;
+class CollectUrlDao extends BaseDao {
 	
 	function CollectUrlDao($oConnMng){
-		$this->_oConnMng = $oConnMng;
-		$this->_oConn = $oConnMng->getConn(1);
+		parent::BaseDao($oConnMng);
+		$this->setDefaultDBNo(URL_DB);
 	}
 	
 	// 階層ごとのURLリスト取得
 	function getUrlByHierarchy($iHierarchy=0){
-		$oConn = $this->_oConn;
+		$oConn = $this->getConn();
 		
 		$sSql ="select
 					 h.id
-					, u.url
+					,u.url
 					from t_hierarchy h
 					inner join m_url u
 					on h.url_id = u.url_id
 					where h.hierarchy =".$iHierarchy;
 		
-		$oDb->executeSelect($sSql);
-		$aUrlHeader = $oDb->fetchAll();
+		$oConn->executeSelect($sSql);
+		$aUrlHeader = $oConn->fetchAll();
 		
 		return $aUrlHeader;
 	}
 	
 	// URL存在チェック
 	function checkUrlExist($sUrl){
-		$oConn = $this->_oConn;
+		$oConn = $this->getConn();
 		$sSql = "select
-					 id
+					 url_id
 					from m_url
 					where url = :url";
-		
-		$oConn->executeSelect($sSql,array('url'=>$sUrl),2);
+
+		if($oConn->executeSelect($sSql,array('url'=>$sUrl),2) === FALSE){
+			// エラー処理
+			$this->_oConnMng->execErrorOccurs();
+		}
 		$aUrlHeader = $oConn->fetchAll();
 		
-		if(count($aUrlHeader) != 0){
-			return $aUrlHeader[0]['id'];
+		if($aUrlHeader && count($aUrlHeader) != 0){
+			return $aUrlHeader[0]['url_id'];
 		} else {
 			return FALSE;
 		}
@@ -47,19 +48,19 @@ class CollectUrlDao {
 	
 	// URL Insert処理
 	function setUrl($sUrl){
-		$oConn = $this->_oConn;
+		$oConn = $this->getConn();
 		$sSql =" INSERT INTO m_url(url) VALUES (:url)";
-		
+
 		$aParam = array();
 		$aParam['url'] = $sUrl;
 		
-		if($oConn->executeInsert($sSql,array($aParam),2) !== FALSE){
+		if($oConn->executeInsert($sSql,array($aParam),2) === FALSE){
 			// エラー処理
 			$this->_oConnMng->execErrorOccurs();
 		}
-		
-		$id = $oConn->lastInsertId();
-		if($id !== FALSE){
+		$id = $this->getLastInsertUrlId();
+
+		if($id === FALSE){
 			// エラー処理
 			$this->_oConnMng->execErrorOccurs();
 		}
@@ -67,9 +68,28 @@ class CollectUrlDao {
 		return $id;
 	}
 	
+	function getLastInsertUrlId(){
+		$oConn = $this->getConn();
+		$sSql = "select
+					 max(url_id)
+					from m_url";
+
+		if($oConn->executeSelect($sSql) === FALSE){
+			// エラー処理
+			$this->_oConnMng->execErrorOccurs();
+		}
+		$aUrlHeader = $oConn->fetchAll();
+		
+		if($aUrlHeader && count($aUrlHeader) != 0){
+			return $aUrlHeader[0]['max'];
+		} else {
+			return FALSE;
+		}
+	}
+	
 	// URL 階層情報Insert処理
 	function setHierarchy($iUrlId,$iParentId,$iHierarchy,$sTitle){
-		$oConn = $this->_oConn;
+		$oConn = $this->getConn();
 		
 		$sSql ="INSERT
 					 INTO t_hierarchy(url_id
@@ -87,7 +107,7 @@ class CollectUrlDao {
 		$aParam['link_title'] = $sTitle;
 		$aParam['parent_id'] = $iParentId;
 
-		if($oConn->executeInsert($sSql,array($aParam),2) !== FALSE){
+		if($oConn->executeInsert($sSql,array($aParam),2) === FALSE){
 			// エラー処理
 			$this->_oConnMng->execErrorOccurs();
 		}

@@ -1,6 +1,6 @@
 <?php
 require_once('XML_HTMLSax.php');
-require_once('class/util/Handler.php');
+require_once('util/Handler.php');
 
 /**
  * Web 取得
@@ -32,15 +32,17 @@ function getHtmlData($sUrl){
 class HtmlParse {
 	var $_handle = null;
 	var $_parser = null;
+	var $_mode = 1;
 		
 	function HtmlParse($iMode=1){
 		// Instantiate the handler
+		$this->_mode = $iMode;
 		
 		// URL取得
-		if($iMode == 1){
+		if($this->_mode == 1){
 			$this->_handler= new UrlGetHandler();
 		// タグ除去
-		} elseif($iMode == 2){
+		} elseif($this->_mode == 2){
 			$this->_handler= new SimpleUrlHandler();
 		}
 
@@ -68,14 +70,14 @@ class HtmlParse {
 	
 	function getResult(){
 		// URL取得
-		if($iMode == 1){
+		if($this->_mode == 1){
 			if(count($this->_handler->getUrl()) != 0){
-				return array($this->_handler->getSubeject(),$this->_handler->getUrl(),$this->_handler->getBodyData());
+				return array($this->_handler->getSubeject(),$this->_handler->getUrl());
 			} else {
 				return false;
 			}
 		// タグ除去
-		} elseif($iMode == 2){
+		} elseif($this->_mode == 2){
 			$this->_handler= new SimpleUrlHandler();
 		}
 	}

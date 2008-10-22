@@ -1,6 +1,7 @@
 <?php
 class MyHandler {
     function MyHandler(){}
+    function clearDataFiled(){}
     function openHandler(& $parser,$name,$attrs) {
         echo ( 'Open Tag Handler: '.$name.'<br />' );
         echo ( 'Attrs:<pre>' );
@@ -27,7 +28,8 @@ class MyHandler {
 class UrlGetHandler extends MyHandler{
 	var $_active_tag = array();
 	var $_current_tag = array();
-
+	
+	var $_t_subject = '';
 	var $_url = array();
 	var $_url_subeject = array();
 
@@ -46,36 +48,53 @@ class UrlGetHandler extends MyHandler{
     function clearDataFiled(){
 		$this->_active_tag = array();
 		$this->_current_tag = '';
-	
+		
+		$this->_t_subject = '';
 		$this->_url = array();
 		$this->_url_subeject = array();
     }
     
     function openHandler(& $parser,$name,$attrs) {
     	// 現在のアクティブなタグ種別を取得
-    	array_push($this->_active_tag,$name);
+    	array_push($this->_active_tag,strtolower($name));
       	    	
-        if($name == 'a'){
+        if(strtolower($name) == 'a'){
+        	$this->_t_subject = '';
     		$this->_url[] = $attrs['href'];
-    	} elseif($name == 'img' && $this->_current_tag == 'a' ){
-    		$this->_url_subeject[] = $attrs['alt'];   		
+    		
+    	} elseif(strtolower($name) == 'img' && in_array('a',$this->_active_tag)){
+    		if(isset($attrs['alt'])){
+    			$this->_t_subject .= $attrs['alt'];
+    		} else {
+    			$this->_t_subject .= '';
+    		}
+    		
     	} 
     	    	
-    	$this->_current_tag = $name;
+    	$this->_current_tag = strtolower($name);
     }
     
     function closeHandler(& $parser,$name) {
+    	
+    	if(strtolower($name) == 'a'){
+    		$this->_url_subeject[] = $this->_t_subject;
+    	}
+    	
     	array_pop($this->_active_tag);
     	$this->_current_tag = '';
     }
     
     function dataHandler(&$parser,$data) {
-        if($this->_current_tag == 'a'){    	
-        	$this->_url_subeject[] = $data;
+        if($this->_current_tag == 'a' || in_array('a',$this->_active_tag)){
+        	$this->_t_subject .= $data;
     	} 
    	}
 	
-    function escapeHandler(& $parser,$data) {}
+    function escapeHandler(& $parser,$data) {
+        if($this->_current_tag == 'a' || in_array('a',$this->_active_tag)){
+        	$this->_t_subject .= $data;
+    	} 
+    }
     
     function piHandler(& $parser,$target,$data) {}
     
@@ -86,10 +105,12 @@ class RemovedTagHandler extends MyHandler{
 	var $_active_tag = array();
 	var $_current_tag = array();
 
-	var $_change_line_tag = array('div','li','p','blockquote','lh');
+	var $_change_line_tag = array('div','li','p','blockquote','lh','h1');
 	var $_body_flag = false;
+	var $_title = '';
 	var $_body_data = array();
-	
+	var $_meta_data = array();
+		
     function RemovedTagHandler(){ 	
     }
     
@@ -97,13 +118,15 @@ class RemovedTagHandler extends MyHandler{
     	return $this->_body_data;
     }
     
+    function getMetaData(){
+    	return $this->$_meta_data;
+    }
+    
     function clearDataFiled(){
 		$this->_active_tag = array();
-		$this->_current_tag = array();
+		$this->_current_tag = '';
+		
 		$this->_body_flag = false;
-	
-		$this->_url = array();
-		$this->_url_subeject = array();
 		
 		$this->_body_data = array();
     }
@@ -112,14 +135,12 @@ class RemovedTagHandler extends MyHandler{
     	// 現在のアクティブなタグ種別を取得
     	array_push($this->_active_tag,$name);
       	    	
-        if($name == 'a'){
-    		$this->_url[] = $attrs['href'];
-    	} elseif($name == 'img' && $this->_current_tag == 'a' ){
-    		$this->_url_subeject[] = $attrs['alt'];   		
-    	} elseif($name == 'body'){
+		if($name == 'body'){
     		$this->_body_flag = true;
     	} elseif($name == 'script'){
     		$this->_body_flag = false;
+    	} elseif($this->_current_tag == 'META'){
+    		$this->_meta_data[$attrs["name"] ] = $attrs["content"];
     	}
     	
     	$this->_current_tag = $name;
@@ -136,20 +157,24 @@ class RemovedTagHandler extends MyHandler{
     	}
     }
     
-    function dataHandler(&$parser,$data) {
-        if($this->_current_tag == 'a'){    	
-        	$this->_url_subeject[] = $data;
-    	} 
-    	
+    function dataHandler(&$parser,$data) {   	
     	if($this->_body_flag){
     		// タグによる改行
     		if(in_array($this->_current_tag,$this->_change_line_tag) !== FALSE){
     			$data = $data."\n";
     		}
+    		
+    		// 
+    		$data = $this->unhtmlentities($data);
+    		
     		// 句読点による改行
     		$data = str_replace("。","。\n",$data);
     		
     		$this->_body_data[] = mb_convert_kana($data, "ASKV","UTF-8");
+    	} else {
+    		if($this->_current_tag == 'title'){
+    			$this->_title = mb_convert_kana($data, "ASKV","UTF-8");
+    		}    		
     	}
 	}
 	
@@ -162,7 +187,19 @@ class RemovedTagHandler extends MyHandler{
     
     function jaspHandler(& $parser,$data) {
     }
+    
+	function unhtmlentities($string)
+	{
+	    // 数値エンティティの置換
+	    $string = preg_replace('~&#x([0-9a-f]+);~ei', 'chr(hexdec("\\1"))', $string);
+	    $string = preg_replace('~&#([0-9]+);~e', 'chr(\\1)', $string);
+	    // 文字エンティティの置換
+	    $trans_tbl = get_html_translation_table(HTML_ENTITIES);
+	    $trans_tbl = array_flip($trans_tbl);
+	    return strtr($string, $trans_tbl);
+	}
 }
+
 
 class CategoryHandler extends MyHandler{
 	var $_active_tag = array();

@@ -30,20 +30,22 @@ for($iHierarchy=0;$iHierarchy<3;$iHierarchy++){
 		// 解析 
 		$oParser->execHtmlParse($sHtml);
 		$rtn = $oParser->getResult();
-		
+
 		if($rtn !== false){
 			list($aSubject,$aUrl) = $rtn;
 
 			foreach($aUrl as $iUrlNo => $sUrl){
-				// URL存在チェック
-				$id = $oDb->checkUrlExist($sUrl);
-				if($id !== FALSE){
-					// URLセット
-					$id = $oDb->setUrl($sUrl);
-				}				
-				
-				// 階層情報セット
-				$oDb->setHierarchy($id,$aUrlHeader[$iCnt]['id'],$iHierarchy+1,$aSubject[$iUrlNo]);
+				if($sUrl != ''){
+					// URL存在チェック
+					$id = $oDb->checkUrlExist($sUrl);
+					if($id === FALSE){
+						// URLセット
+						$id = $oDb->setUrl($sUrl);
+					}
+					
+					// 階層情報セット
+					$oDb->setHierarchy($id,$aUrlHeader[$iCnt]['id'],$iHierarchy+1,$aSubject[$iUrlNo]);
+				}
 			}
 		}
 	}
