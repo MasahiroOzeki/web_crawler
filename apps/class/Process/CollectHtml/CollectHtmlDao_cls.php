@@ -15,7 +15,8 @@ class CollectHtmlDao extends BaseDao  {
 					,url
 					from m_url
 					where status = ".URL_STATUS_WAIT."
-					offset 0 limit ".$iLimit;
+					offset 0 limit ".$iLimit."
+					for update";
 		
 		if($oConn->executeSelect($sSql) === FALSE){
 			// エラー処理
